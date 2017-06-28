@@ -106,11 +106,13 @@ cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str)
 }
 
 /*
- * Destroy parser. (parsing NULL is allowed)
+ * Destroy parse result. Argument cb is an optional pointer to a function which
+ * will be called on each node where node->data is not equal to NULL.
+ * Argument cb is allowed to be NULL.
  */
-void cleri_parse_free(cleri_parse_t * pr)
+void cleri_parse_free_cb(cleri_parse_t * pr, cleri_cb cb)
 {
-    cleri__node_free(pr->tree);
+    cleri__node_free(pr->tree, cb);
     cleri__kwcache_free(pr->kwcache);
     if (pr->expecting != NULL)
     {

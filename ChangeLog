@@ -1,3 +1,12 @@
+libcleri (0.9.2)
+
+  * Update to makefiles for MacOS compatibility.
+
+  * Added public 'data' member to a node which can be used to bind custom
+    data.
+
+ -- Jeroen van der Heijden <jeroen@transceptor.technology>  28 Jun 2017
+
 libcleri (0.9.1)
 
   * Rename object.h to cleri.h and the cleri_object_t to cleri_t.

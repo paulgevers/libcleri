@@ -17,7 +17,8 @@ static cleri_node_t CLERI__EMPTY_NODE = {
         .children=NULL,
         .cl_obj=NULL,
         .len=0,
-        .str=NULL
+        .str=NULL,
+        .data=NULL
 };
 
 cleri_node_t * CLERI_EMPTY_NODE = &CLERI__EMPTY_NODE;
@@ -37,6 +38,7 @@ cleri_node_t * cleri__node_new(cleri_t * cl_obj, const char * str, size_t len)
 
         node->str = str;
         node->len = len;
+        node->data = NULL;
 
         if (cl_obj == NULL || cl_obj->tp <= CLERI_TP_THIS)
         {
@@ -60,14 +62,21 @@ cleri_node_t * cleri__node_new(cleri_t * cl_obj, const char * str, size_t len)
 /*
  * Destroy node. (parsing NULL is allowed)
  */
-void cleri__node_free(cleri_node_t * node)
+void cleri__node_free(cleri_node_t * node, cleri_cb cb)
 {
     /* node can be NULL or this could be an CLERI_EMPTY_NODE */
     if (node == NULL || node == CLERI_EMPTY_NODE || --node->ref)
     {
         return;
     }
-    cleri__children_free(node->children);
+    cleri__children_free(node->children, cb);
+
+    /* run callback function on data before calling free */
+    if (cb != NULL && node->data != NULL)
+    {
+        (*cb)(node->data);
+    }
+
     free(node);
 }
 

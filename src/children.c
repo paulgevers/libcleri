@@ -61,7 +61,7 @@ int cleri__children_add(cleri_children_t * children, cleri_node_t * node)
 /*
  * Destroy children.
  */
-void cleri__children_free(cleri_children_t * children)
+void cleri__children_free(cleri_children_t * children, cleri_cb cb)
 {
     cleri_children_t * next;
     while (children != NULL)

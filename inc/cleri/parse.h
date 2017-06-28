@@ -29,11 +29,14 @@ typedef struct cleri_expecting_s cleri_expecting_t;
 typedef struct cleri_kwcache_s cleri_kwcache_t;
 typedef struct cleri_rule_store_s cleri_rule_store_t;
 typedef struct cleri_parse_s cleri_parse_t;
+typedef void (*cleri_cb)(void * data);
 
 /* public functions */
 cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str);
-void cleri_parse_free(cleri_parse_t * pr);
+void cleri_parse_free_cb(cleri_parse_t * pr, cleri_cb cb);
 void cleri_parse_expect_start(cleri_parse_t * pr);
+/* alias for backwards compatibility */
+#define cleri_parse_free(__pr) cleri_parse_free_cb(__pr, NULL)
 
 /* private functions */
 cleri_node_t * cleri__parse_walk(

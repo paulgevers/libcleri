@@ -17,10 +17,11 @@
 /* typedefs */
 typedef struct cleri_node_s cleri_node_t;
 typedef struct cleri_children_s cleri_children_t;
+typedef void (*cleri_cb)(void * data);
 
 /* private functions */
 cleri_children_t * cleri__children_new(void);
-void cleri__children_free(cleri_children_t * children);
+void cleri__children_free(cleri_children_t * children, cleri_cb cb);
 int cleri__children_add(cleri_children_t * children, cleri_node_t * node);
 
 /* structs */

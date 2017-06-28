@@ -22,14 +22,16 @@
 typedef struct cleri_s cleri_t;
 typedef struct cleri_children_s cleri_children_t;
 typedef struct cleri_node_s cleri_node_t;
+typedef void (*cleri_cb)(void * data);
 
 /* public macro function */
 #define cleri_node_has_children(__node) \
     (__node->children != NULL && __node->children->node != NULL)
 
-/* pricate functions */
+
+/* private functions */
 cleri_node_t * cleri__node_new(cleri_t * cl_obj, const char * str, size_t len);
-void cleri__node_free(cleri_node_t * node);
+void cleri__node_free(cleri_node_t * node, cleri_cb cb);
 
 /* private use as empty node */
 extern cleri_node_t * CLERI_EMPTY_NODE;
@@ -38,6 +40,7 @@ extern cleri_node_t * CLERI_EMPTY_NODE;
 struct cleri_node_s
 {
     /* public */
+    void * data;
     const char * str;
     size_t len;
     cleri_t * cl_obj;
@@ -45,7 +48,6 @@ struct cleri_node_s
 
     /* private */
     uint_fast8_t ref;
-    int64_t result;
-};
-
+    int64_t result;     /* obsolete, but here for backwards compatibility */
+}
 #endif /* CLERI_NODE_H_ */
