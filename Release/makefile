@@ -5,6 +5,9 @@
 -include ../makefile.init
 
 RM := rm -rf
+MAJOR := 0
+MINOR := 9
+PATCH := 2
 
 # All of the sources participating in the build are defined here
 -include sources.mk
@@ -38,13 +41,13 @@ all: libcleri
 libcleri: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc -shared -o $(FN) $(OBJS) $(USER_OBJS) $(LIBS) $(LDFLAGS)
+	gcc -shared -o $(FN).$(MAJOR).$(MINOR).$(PATCH) $(OBJS) $(USER_OBJS) $(LIBS) $(LDFLAGS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) $(FN)
+	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) $(FN).$(MAJOR).$(MINOR).$(PATCH)
 	-@echo ' '
 
 .PHONY: all clean dependents
