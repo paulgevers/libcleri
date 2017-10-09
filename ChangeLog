@@ -1,3 +1,10 @@
+libcleri (1.0.0)
+
+  * Warning: breaking API changes. In this release the linked lists are
+    replaced with vectors and queues.
+
+ -- Jeroen van der Heijden <jeroen@transceptor.technology>  01 Sep 2017
+
 libcleri (0.9.3)
 
   * Fixed compiler warnings.
