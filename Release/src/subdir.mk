@@ -15,6 +15,8 @@ C_SRCS += \
 ../src/node.c \
 ../src/cleri.c \
 ../src/olist.c \
+../src/queue.c \
+../src/vec.c \
 ../src/optional.c \
 ../src/parse.c \
 ../src/prio.c \
@@ -39,6 +41,8 @@ OBJS += \
 ./src/node.o \
 ./src/cleri.o \
 ./src/olist.o \
+./src/queue.o \
+./src/vec.o \
 ./src/optional.o \
 ./src/parse.o \
 ./src/prio.o \
@@ -63,6 +67,8 @@ C_DEPS += \
 ./src/node.d \
 ./src/cleri.d \
 ./src/olist.d \
+./src/queue.d \
+./src/vec.d \
 ./src/optional.d \
 ./src/parse.d \
 ./src/prio.d \

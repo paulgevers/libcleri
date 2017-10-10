@@ -64,9 +64,9 @@ cleri_t * cleri_prio(uint32_t gid, size_t len, ...)
     va_start(ap, len);
     while(len--)
     {
-        CLERI_VEC_push(
-            (cleri_vec_t *) cl_object->via.prio->olist,
-            va_arg(ap, cleri_t *));
+        cleri_t * o = va_arg(ap, cleri_t *);
+        CLERI_VEC_push((cleri_vec_t *) cl_object->via.prio->olist, o);
+        o->ref++;
     }
     va_end(ap);
 

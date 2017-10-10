@@ -48,10 +48,12 @@
  */
 void cleri__children_free(cleri_children_t * children)
 {
+    if (!children) return;
     for (uint32_t i = 0; i < children->n; i++)
     {
         cleri__node_free(children->node[i]);
     }
+    free(children);
     // cleri_children_t * next;
     // while (children != NULL)
     // {

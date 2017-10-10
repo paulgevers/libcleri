@@ -61,7 +61,7 @@ void cleri__olist_free(cleri_olist_t * olist)
     if (!olist) return;
     for (uint32_t i = 0; i < olist->n; i++)
     {
-        cleri_free(*olist[i].cl_obj);
+        cleri_free(olist->cl_obj[i]);
     }
     free(olist);
 }
