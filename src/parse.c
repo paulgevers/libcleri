@@ -35,21 +35,22 @@ cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str)
     }
 
     pr->str = str;
-    pr->tree = NULL;
-    pr->kwcache = NULL;
-    pr->expecting = NULL;
     pr->is_valid = 0;
+    pr->tree = NULL;
+    pr->expect = NULL;
+    pr->kwcache_ = NULL;
+    pr->expecting_ = NULL;
 
     if (    (pr->tree = cleri__node_new(NULL, str, 0)) == NULL ||
-            (pr->kwcache = cleri__kwcache_new()) == NULL ||
-            (pr->expecting = cleri__expecting_new(str)) == NULL)
+            (pr->kwcache_ = cleri_vec_new(8)) == NULL ||
+            (pr->expecting_ = cleri__expecting_new(str)) == NULL)
     {
         cleri_parse_free(pr);
         return NULL;
     }
 
-    pr->re_keywords = grammar->re_keywords;
-    pr->re_kw_extra = grammar->re_kw_extra;
+    pr->re_keywords_ = grammar->re_keywords;
+    pr->re_kw_extra_ = grammar->re_kw_extra;
 
     /* do the actual parsing */
     cleri__parse_walk(
@@ -81,16 +82,16 @@ cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str)
 
     pr->is_valid = at_end;
     pr->pos = (pr->is_valid) ?
-            pr->tree->len : (size_t) (pr->expecting->str - pr->str);
+            pr->tree->len : (size_t) (pr->expecting_->str - pr->str);
 
-    if (!at_end && pr->expecting->required->cl_obj == NULL)
+    if (!at_end && pr->expecting_->required->cl_obj == NULL)
     {
         if (cleri__expecting_set_mode(
-                pr->expecting,
+                pr->expecting_,
                 end,
                 CLERI__EXP_MODE_REQUIRED) == -1 ||
             cleri__expecting_update(
-                pr->expecting,
+                pr->expecting_,
                 CLERI_END_OF_STATEMENT,
                 end) == -1)
         {
@@ -99,9 +100,19 @@ cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str)
         }
     }
 
-    cleri__expecting_combine(pr->expecting);
+    if (cleri__expecting_combine(pr->expecting_))
+    {
+        cleri_parse_free(pr);
+        return NULL;
+    }
 
-    pr->expect = pr->expecting->required;
+    /* set expect */
+    pr->expect = pr->expecting_->required;
+
+    /* cleanup expecting */
+    pr->expecting_->required = NULL;
+    cleri__expecting_free(pr->expecting_);
+    pr->expecting_ = NULL;
 
     return pr;
 }
@@ -111,22 +122,13 @@ cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str)
  */
 void cleri_parse_free(cleri_parse_t * pr)
 {
+    free(pr->expect);
     cleri__node_free(pr->tree);
-    cleri__kwcache_free(pr->kwcache);
-    if (pr->expecting != NULL)
-    {
-        cleri__expecting_free(pr->expecting);
-    }
+    cleri_vec_destroy(pr->kwcache_, free);
+    cleri__expecting_free(pr->expecting_);
     free(pr);
 }
 
-/*
- * Reset expect to start
- */
-void cleri_parse_expect_start(cleri_parse_t * pr)
-{
-    pr->expect = pr->expecting->required;
-}
 
 /*
  * Walk a parser object.
@@ -147,7 +149,7 @@ cleri_node_t * cleri__parse_walk(
     }
 
     /* set expecting mode */
-    if (cleri__expecting_set_mode(pr->expecting, parent->str, mode) == -1)
+    if (cleri__expecting_set_mode(pr->expecting_, parent->str, mode) == -1)
     {
         pr->is_valid = -1;
         return NULL;

@@ -21,7 +21,6 @@
 
 /* typedefs */
 typedef struct cleri_s cleri_t;
-typedef struct cleri_olist_s cleri_olist_t;
 typedef struct cleri_prio_s cleri_prio_t;
 
 /* public functions */

@@ -85,6 +85,7 @@ static cleri_node_t * REPEAT_parse(
         cleri_t * cl_obj,
         cleri_rule_store_t * rule)
 {
+    cleri_children_t * tmp;
     cleri_node_t * node;
     cleri_node_t * rnode;
     size_t i;
@@ -115,14 +116,19 @@ static cleri_node_t * REPEAT_parse(
         cleri__node_free(node);
         return NULL;
     }
-    parent->len += node->len;
-    if (cleri__children_add(parent->children, node))
+
+    tmp = (cleri_children_t *) cleri_vec_push(
+            (cleri_vec_t *) parent->children, node);
+    if (!tmp)
     {
          /* error occurred, reverse changes set mg_node to NULL */
-        pr->is_valid = -1;
-        parent->len -= node->len;
-        cleri__node_free(node);
-        node = NULL;
+         pr->is_valid = -1;
+         cleri__node_free(node);
+         return NULL;
     }
+
+    parent->children = tmp;
+    parent->len += node->len;
+
     return node;
 }

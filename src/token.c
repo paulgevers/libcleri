@@ -84,22 +84,25 @@ static cleri_node_t * TOKEN_parse(
                 str,
                 cl_obj->via.token->len)) != NULL)
         {
-            parent->len += node->len;
-            if (cleri__children_add(parent->children, node))
+            cleri_children_t * tmp = (cleri_children_t *) cleri_vec_push(
+                (cleri_vec_t *) parent->children, node);
+            if (!tmp)
             {
-                 /* error occurred, reverse changes set mg_node to NULL */
-                pr->is_valid = -1;
-                parent->len -= node->len;
-                cleri__node_free(node);
-                node = NULL;
+                /* error occurred, reverse changes set mg_node to NULL */
+               pr->is_valid = -1;
+               cleri__node_free(node);
+               return NULL;
             }
+            parent->children = tmp;
+            parent->len += node->len;
+            return node;
         }
         else
         {
             pr->is_valid = -1;
         }
     }
-    else if (cleri__expecting_update(pr->expecting, cl_obj, str) == -1)
+    else if (cleri__expecting_update(pr->expecting_, cl_obj, str) == -1)
     {
         pr->is_valid = -1;
     }

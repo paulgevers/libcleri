@@ -44,6 +44,7 @@ static cleri_node_t * cleri_parse_this(
         cleri_t * cl_obj,
         cleri_rule_store_t * rule)
 {
+    cleri_children_t * tmp;
     cleri_node_t * node;
     cleri_rule_tested_t * tested;
     const char * str = parent->str + parent->len;
@@ -86,14 +87,18 @@ static cleri_node_t * cleri_parse_this(
         node = NULL;
     }
 
-    parent->len += tested->node->len;
-    if (cleri__children_add(parent->children, node))
+    tmp = (cleri_children_t *) cleri_vec_push(
+        (cleri_vec_t *) parent->children, node);
+    if (!tmp)
     {
          /* error occurred, reverse changes set mg_node to NULL */
-        pr->is_valid = -1;
-        parent->len -=  tested->node->len;
-        cleri__node_free(node);
-        node = NULL;
+         pr->is_valid = -1;
+         cleri__node_free(node);
+         return NULL;
     }
+
+    parent->children = tmp;
+    parent->len += tested->node->len;
+
     return node;
 }

@@ -161,14 +161,20 @@ static cleri_node_t * RULE_parse(
     }
     else
     {
-        parent->len += node->len;
-        if (cleri__children_add(parent->children, node))
+        cleri_children_t * tmp = (cleri_children_t *) cleri_vec_push(
+            (cleri_vec_t *) parent->children, node);
+
+        if (tmp)
         {
-             /* error occurred, reverse changes set mg_node to NULL */
-            pr->is_valid = -1;
-            parent->len -= node->len;
-            cleri__node_free(node);
-            node = NULL;
+            parent->children = tmp;
+            parent->len += node->len;
+        }
+        else
+        {
+            /* error occurred, reverse changes set mg_node to NULL */
+           pr->is_valid = -1;
+           cleri__node_free(node);
+           node = NULL;
         }
     }
 

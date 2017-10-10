@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <cleri/queue.h>
 #include <cleri/olist.h>
 #include <cleri/cleri.h>
 
@@ -23,7 +24,6 @@
 
 /* typedefs */
 typedef struct cleri_s cleri_t;
-typedef struct cleri_olist_s cleri_olist_t;
 typedef struct cleri_exp_modes_s cleri_exp_modes_t;
 typedef struct cleri_expecting_s cleri_expecting_t;
 
@@ -38,14 +38,13 @@ int cleri__expecting_set_mode(
         const char * str,
         int mode);
 void cleri__expecting_free(cleri_expecting_t * expecting);
-void cleri__expecting_combine(cleri_expecting_t * expecting);
+int cleri__expecting_combine(cleri_expecting_t * expecting);
 
 /* structs */
 struct cleri_exp_modes_s
 {
     int mode;
     const char * str;
-    cleri_exp_modes_t * next;
 };
 
 struct cleri_expecting_s
@@ -53,7 +52,7 @@ struct cleri_expecting_s
     const char * str;
     cleri_olist_t * required;
     cleri_olist_t * optional;
-    cleri_exp_modes_t * modes;
+    cleri_queue_t * modes;
 };
 
 #endif /* CLERI_EXPECTING_H_ */

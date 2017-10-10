@@ -41,7 +41,7 @@ cleri_node_t * cleri__node_new(cleri_t * cl_obj, const char * str, size_t len)
         if (cl_obj == NULL || cl_obj->tp <= CLERI_TP_THIS)
         {
             /* NULL when initializing the root node but we do need children */
-            node->children = cleri__children_new();
+            node->children = (cleri_children_t *) cleri_vec_new(4);
             if (node->children == NULL)
             {
                 free(node);

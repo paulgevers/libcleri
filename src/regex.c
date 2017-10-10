@@ -133,7 +133,7 @@ static cleri_node_t *  REGEX_parse(
             2);                    // length of sub_str_vec
     if (pcre_exec_ret < 0)
     {
-        if (cleri__expecting_update(pr->expecting, cl_obj, str) == -1)
+        if (cleri__expecting_update(pr->expecting_, cl_obj, str) == -1)
         {
             pr->is_valid = -1; /* error occurred */
         }
@@ -144,15 +144,17 @@ static cleri_node_t *  REGEX_parse(
      */
     if ((node = cleri__node_new(cl_obj, str, (size_t) sub_str_vec[1])) != NULL)
     {
-        parent->len += node->len;
-        if (cleri__children_add(parent->children, node))
+        cleri_children_t * tmp = (cleri_children_t *) cleri_vec_push(
+            (cleri_vec_t *) parent->children, node);
+        if (!tmp)
         {
-             /* error occurred, reverse changes set node to NULL */
+            /* error occurred, reverse changes set mg_node to NULL */
             pr->is_valid = -1;
-            parent->len -= node->len;
             cleri__node_free(node);
-            node = NULL;
+            return NULL;
         }
+        parent->children = tmp;
+        parent->len += node->len;
     }
     else
     {

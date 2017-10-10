@@ -15,6 +15,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <cleri/vec.h>
 
 static void CHOICE_free(cleri_t * cl_object);
 
@@ -64,7 +65,7 @@ cleri_t * cleri_choice(uint32_t gid, int most_greedy, size_t len, ...)
     }
 
     cl_object->via.choice->most_greedy = most_greedy;
-    cl_object->via.choice->olist = cleri__olist_new();
+    cl_object->via.choice->olist = (cleri_olist_t *) cleri_vec_new(len);
 
     if (cl_object->via.choice->olist == NULL)
     {
@@ -75,15 +76,9 @@ cleri_t * cleri_choice(uint32_t gid, int most_greedy, size_t len, ...)
     va_start(ap, len);
     while(len--)
     {
-        if (cleri__olist_append(
-                cl_object->via.choice->olist,
-                va_arg(ap, cleri_t *)))
-        {
-            cleri__olist_cancel(cl_object->via.choice->olist);
-            cleri_free(cl_object);
-            cl_object = NULL;
-            break;
-        }
+        CLERI_VEC_push(
+            (cleri_vec_t *) cl_object->via.choice->olist,
+            va_arg(ap, cleri_t *));
     }
     va_end(ap);
 
@@ -129,7 +124,7 @@ static cleri_node_t * CHOICE_parse_most_greedy(
     const char * str = parent->str + parent->len;
 
     olist = cl_obj->via.choice->olist;
-    while (olist != NULL)
+    for (uint32_t i = 0; i < olist->n; i++)
     {
         if ((node = cleri__node_new(cl_obj, str, 0)) == NULL)
         {
@@ -139,7 +134,7 @@ static cleri_node_t * CHOICE_parse_most_greedy(
         rnode = cleri__parse_walk(
                 pr,
                 node,
-                olist->cl_obj,
+                olist->cl_obj[i],
                 rule,
                 CLERI__EXP_MODE_REQUIRED);
         if (rnode != NULL && (mg_node == NULL || node->len > mg_node->len))
@@ -151,19 +146,20 @@ static cleri_node_t * CHOICE_parse_most_greedy(
         {
             cleri__node_free(node);
         }
-        olist = olist->next;
     }
     if (mg_node != NULL)
     {
-        parent->len += mg_node->len;
-        if (cleri__children_add(parent->children, mg_node))
+        cleri_children_t * tmp = (cleri_children_t *) cleri_vec_push(
+            (cleri_vec_t *) parent->children, mg_node);
+        if (!tmp)
         {
-             /* error occurred, reverse changes set mg_node to NULL */
-            pr->is_valid = -1;
-            parent->len -= mg_node->len;
-            cleri__node_free(mg_node);
-            mg_node = NULL;
+            /* error occurred, reverse changes set mg_node to NULL */
+           pr->is_valid = -1;
+           cleri__node_free(mg_node);
+           return NULL;
         }
+        parent->children = tmp;
+        parent->len += mg_node->len;
     }
     return mg_node;
 }
@@ -188,28 +184,29 @@ static cleri_node_t * CHOICE_parse_first_match(
         pr->is_valid = -1;
         return NULL;
     }
-    while (olist != NULL)
+    for (uint32_t i = 0; i < olist->n; i++)
     {
         rnode = cleri__parse_walk(
                 pr,
                 node,
-                olist->cl_obj,
+                olist->cl_obj[i],
                 rule,
                 CLERI__EXP_MODE_REQUIRED);
         if (rnode != NULL)
         {
-            parent->len += node->len;
-            if (cleri__children_add(parent->children, node))
+            cleri_children_t * tmp = (cleri_children_t *) cleri_vec_push(
+                (cleri_vec_t *) parent->children, node);
+            if (!tmp)
             {
-                 /* error occurred, reverse changes set mg_node to NULL */
-                pr->is_valid = -1;
-                parent->len -= node->len;
-                cleri__node_free(node);
-                node = NULL;
+                /* error occurred, reverse changes set mg_node to NULL */
+               pr->is_valid = -1;
+               cleri__node_free(node);
+               return NULL;
             }
+            parent->children = tmp;
+            parent->len += node->len;
             return node;
         }
-        olist = olist->next;
     }
     cleri__node_free(node);
     return NULL;

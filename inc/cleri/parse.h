@@ -20,6 +20,7 @@
 #include <cleri/expecting.h>
 #include <cleri/kwcache.h>
 #include <cleri/rule.h>
+#include <cleri/vec.h>
 
 /* typedefs */
 typedef struct cleri_s cleri_t;
@@ -37,7 +38,6 @@ extern "C" {
 
 cleri_parse_t * cleri_parse(cleri_grammar_t * grammar, const char * str);
 void cleri_parse_free(cleri_parse_t * pr);
-void cleri_parse_expect_start(cleri_parse_t * pr);
 
 #ifdef __cplusplus
 }
@@ -54,15 +54,18 @@ cleri_node_t * cleri__parse_walk(
 /* structs */
 struct cleri_parse_s
 {
+    /* public */
     int is_valid;
     size_t pos;
     const char * str;
     cleri_node_t * tree;
-    const cleri_olist_t * expect;
-    cleri_expecting_t * expecting;
-    pcre * re_keywords;
-    pcre_extra * re_kw_extra;
-    cleri_kwcache_t * kwcache;
+    cleri_olist_t * expect;
+
+    /* private */
+    cleri_expecting_t * expecting_;
+    pcre * re_keywords_;
+    pcre_extra * re_kw_extra_;
+    cleri_vec_t * kwcache_;
 };
 
 #endif /* CLERI_PARSE_H_ */

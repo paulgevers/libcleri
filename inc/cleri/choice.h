@@ -20,7 +20,6 @@
 
 /* typedefs */
 typedef struct cleri_s cleri_t;
-typedef struct cleri_olist_s cleri_olist_t;
 typedef struct cleri_choice_s cleri_choice_t;
 
 /* public functions */

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cleri/keyword.h>
+#include <cleri/vec.h>
 
 static void KEYWORD_free(cleri_t * cl_object);
 
@@ -91,14 +92,22 @@ static cleri_node_t * KEYWORD_parse(
     {
         if ((node = cleri__node_new(cl_obj, str, match_len)) != NULL)
         {
+            cleri_children_t * tmp = (cleri_children_t *) cleri_vec_push(
+                (cleri_vec_t *) parent->children, node);
+            if (!tmp)
+            {
+               pr->is_valid = -1;
+               cleri__node_free(node);
+               return NULL;
+            }
+            parent->children = tmp;
             parent->len += node->len;
-            cleri__children_add(parent->children, node);
         }
     }
     else
     {
         /* Update expecting */
-        if (cleri__expecting_update(pr->expecting, cl_obj, str) == -1)
+        if (cleri__expecting_update(pr->expecting_, cl_obj, str) == -1)
         {
             /* error occurred, node is already NULL */
             pr->is_valid = -1;

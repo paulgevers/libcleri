@@ -12,25 +12,6 @@
 #ifndef CLERI_OBJECT_H_
 #define CLERI_OBJECT_H_
 
-#include <cleri/expecting.h>
-#include <cleri/keyword.h>
-#include <cleri/sequence.h>
-#include <cleri/optional.h>
-#include <cleri/choice.h>
-#include <cleri/dup.h>
-#include <cleri/list.h>
-#include <cleri/regex.h>
-#include <cleri/repeat.h>
-#include <cleri/token.h>
-#include <cleri/tokens.h>
-#include <cleri/grammar.h>
-#include <cleri/prio.h>
-#include <cleri/node.h>
-#include <cleri/parse.h>
-#include <cleri/rule.h>
-#include <cleri/this.h>
-#include <cleri/ref.h>
-
 /* typedefs */
 typedef struct cleri_s cleri_t;
 typedef struct cleri_grammar_s cleri_grammar_t;
@@ -51,6 +32,25 @@ typedef struct cleri_parse_s cleri_parse_t;
 typedef struct cleri_ref_s cleri_ref_t;
 typedef struct cleri_s cleri_t;
 typedef struct cleri_dup_s cleri_dup_t;
+
+#include <cleri/expecting.h>
+#include <cleri/keyword.h>
+#include <cleri/sequence.h>
+#include <cleri/optional.h>
+#include <cleri/choice.h>
+#include <cleri/dup.h>
+#include <cleri/list.h>
+#include <cleri/regex.h>
+#include <cleri/repeat.h>
+#include <cleri/token.h>
+#include <cleri/tokens.h>
+#include <cleri/grammar.h>
+#include <cleri/prio.h>
+#include <cleri/node.h>
+#include <cleri/parse.h>
+#include <cleri/rule.h>
+#include <cleri/this.h>
+#include <cleri/ref.h>
 
 typedef union cleri_u cleri_via_t;
 

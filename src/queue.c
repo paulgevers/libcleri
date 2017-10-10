@@ -15,8 +15,7 @@ static cleri_queue_t * cleri_queue__grow(cleri_queue_t * queue);
  */
 cleri_queue_t * cleri_queue_new(size_t sz)
 {
-    cleri_queue_t * queue = (cleri_queue_t *) malloc(
-            sizeof(cleri_queue_t) + sz * sizeof(void*));
+    cleri_queue_t * queue = (cleri_queue_t *) malloc(sizeof(cleri_queue_t) + sz * sizeof(void*));
     if (!queue) return NULL;
     queue->sz = sz;
     queue->n = 0;
@@ -37,26 +36,62 @@ void cleri_queue_destroy(cleri_queue_t * queue, cleri_queue_destroy_cb cb)
     free(queue);
 }
 
+void cleri_queue_copy(cleri_queue_t * queue, void * dest[])
+{
+    size_t m = queue->sz - queue->s_;
+    if (m < queue->n)
+    {
+        memcpy(dest, queue->data_ + queue->s_, m * sizeof(void*));
+        memcpy(dest + m, queue->data_, (queue->n - m) * sizeof(void*));
+    }
+    else
+    {
+        memcpy(dest, queue->data_ + queue->s_, queue->n * sizeof(void*));
+    }
+}
+
+/*
+ * This function may resize the queue so it has space for at least n new
+ * objects.
+ */
+cleri_queue_t * cleri_queue_reserve(cleri_queue_t * queue, size_t n)
+{
+    size_t nn = queue->n + n;
+    if (nn > queue->sz)
+    {
+        cleri_queue_t * q;
+        size_t sz = queue->sz;
+        queue->sz = (nn > (queue->sz += queue->s_)) ? nn : queue->sz;
+
+        q = (cleri_queue_t *) realloc(
+                queue,
+                sizeof(cleri_queue_t) + queue->sz * sizeof(void*));
+
+        if (!q)
+        {
+            /* restore original size */
+            queue->sz = sz;
+            return NULL;
+        }
+
+        /* until q->s_ is always initialized but we can more than required */
+        memcpy(q->data_ + sz, q->data_, q->s_ * sizeof(void*));
+        queue = q;
+    }
+    return queue;
+}
+
 /*
  * Returns a copy of queue with an exact fit so the new queue->sz and queue->n
  * will be equal. In case of an allocation error the return value is NULL.
  */
-cleri_queue_t * cleri_queue_copy(cleri_queue_t * queue)
+cleri_queue_t * cleri_queue_dup(cleri_queue_t * queue)
 {
-    cleri_queue_t * q = (cleri_queue_t *) malloc(
-            sizeof(cleri_queue_t) + queue->n * sizeof(void*));
+    cleri_queue_t * q =
+            (cleri_queue_t *) malloc(sizeof(cleri_queue_t) + queue->n * sizeof(void*));
     if (!q) return NULL;
 
-    size_t m = queue->sz - queue->s_;
-    if (m < queue->n)
-    {
-        memcpy(q->data_, queue->data_ + queue->s_, m * sizeof(void*));
-        memcpy(q->data_ + m, queue->data_, (queue->n - m) * sizeof(void*));
-    }
-    else
-    {
-        memcpy(q->data_, queue->data_ + queue->s_, queue->n * sizeof(void*));
-    }
+    cleri_queue_copy(queue, q->data_);
 
     q->sz = q->n = queue->n;
     q->s_ = 0;
@@ -95,46 +130,25 @@ cleri_queue_t * cleri_queue_unshift(cleri_queue_t * queue, void * data)
     return queue;
 }
 
-cleri_queue_t * cleri_queue_extend(
-    cleri_queue_t * queue,
-    void * data[],
-    size_t n)
+cleri_queue_t * cleri_queue_extend(cleri_queue_t * queue, void * data[], size_t n)
 {
-    size_t nn = queue->n + n;
-    if (nn > queue->sz)
+    size_t m, next;
+    cleri_queue_t * q = cleri_queue_reserve(queue, n);
+    if (!q) return NULL;
+
+    next = cleri_queue__i(q, q->n);
+    if (next < q->s_ || (n <= (m = q->sz - next)))
     {
-        size_t sz = queue->sz;
-        queue->sz = (nn > (queue->sz *= 2)) ? nn : queue->sz;
-
-        cleri_queue_t * q = (cleri_queue_t *) realloc(
-                queue,
-                sizeof(cleri_queue_t) + queue->sz * sizeof(void*));
-
-        if (!q)
-        {
-            /* restore original size */
-            queue->sz = sz;
-            return NULL;
-        }
-        queue = q;
-
-        /* until q->s_ is always initialized but we can more than required */
-        memcpy(queue->data_ + sz, queue->data_, queue->s_ * sizeof(void*));
-    }
-
-    size_t m, next = cleri_queue__i(queue, queue->n);
-    if (next < queue->s_ || (n <= (m = queue->sz - next)))
-    {
-        memcpy(queue->data_ + next, data, n * sizeof(void*));
+        memcpy(q->data_ + next, data, n * sizeof(void*));
     }
     else
     {
-        memcpy(queue->data_ + next, data, m * sizeof(void*));
-        memcpy(queue->data_, data + m, (n - m) * sizeof(void*));
+        memcpy(q->data_ + next, data, m * sizeof(void*));
+        memcpy(q->data_, data + m, (n - m) * sizeof(void*));
     }
 
-    queue->n = nn;
-    return queue;
+    q->n += n;
+    return q;
 }
 
 /*
@@ -144,16 +158,18 @@ cleri_queue_t * cleri_queue_extend(
  */
 cleri_queue_t * cleri_queue_shrink(cleri_queue_t * queue)
 {
+    size_t n;
+    cleri_queue_t * q;
     if (queue->n == queue->sz) return queue;
 
-    size_t n = queue->sz - queue->s_;
+    n = queue->sz - queue->s_;
     n = (n <= queue->n) ? n : queue->n;
 
     memmove(queue->data_ + queue->n - n,
             queue->data_ + queue->s_,
             n * sizeof(void*));
 
-    cleri_queue_t * q = (cleri_queue_t *) realloc(
+    q = (cleri_queue_t *) realloc(
             queue,
             sizeof(cleri_queue_t) + queue->n * sizeof(void*));
     if (!q) return NULL;
@@ -166,12 +182,13 @@ cleri_queue_t * cleri_queue_shrink(cleri_queue_t * queue)
 
 static cleri_queue_t * cleri_queue__grow(cleri_queue_t * queue)
 {
+    cleri_queue_t * q;
     size_t sz = queue->sz;
 
     queue->sz *= 2;
     queue->sz += !queue->sz;
 
-    cleri_queue_t * q = (cleri_queue_t *) realloc(
+    q = (cleri_queue_t *) realloc(
             queue,
             sizeof(cleri_queue_t) + queue->sz * sizeof(void*));
 
@@ -183,7 +200,6 @@ static cleri_queue_t * cleri_queue__grow(cleri_queue_t * queue)
     }
 
     memcpy(q->data_ + sz, q->data_, q->s_ * sizeof(void*));
-
     return q;
 }
 

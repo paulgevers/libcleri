@@ -14,26 +14,7 @@
 #include <string.h>
 #include <cleri/kwcache.h>
 
-static void KWCACHE_kw_match(
-        cleri_kwcache_t * kwcache,
-        cleri_parse_t * pr,
-        const char * str);
-
-/*
- * Returns NULL in case an error has occurred.
- */
-cleri_kwcache_t * cleri__kwcache_new(void)
-{
-    cleri_kwcache_t * kwcache;
-    kwcache = (cleri_kwcache_t *) malloc(sizeof(cleri_kwcache_t));
-    if (kwcache != NULL)
-    {
-        kwcache->len = 0;
-        kwcache->str = NULL;
-        kwcache->next = NULL;
-    }
-    return kwcache;
-}
+static int KWCACHE_kw_match(cleri_parse_t * pr, const char * str);
 
 /*
  * Returns 0 when no kw_match is found, -1 when an error has occurred, or the
@@ -43,65 +24,41 @@ ssize_t cleri__kwcache_match(
         cleri_parse_t * pr,
         const char * str)
 {
-    cleri_kwcache_t * kwcache = pr->kwcache;
-    if (kwcache->str != NULL)
+    cleri_kwcache_t * kwcache;
+    for (uint32_t i = 0; i < pr->kwcache_->n; i++)
     {
-        while (1)
-        {
-            if (str == kwcache->str)
-            {
-                return kwcache->len;
-            }
+        kwcache = (cleri_kwcache_t *) cleri_vec_get(pr->kwcache_, i);
+        if (kwcache->str == str) return kwcache->len;
 
-            if (kwcache->next == NULL)
-            {
-                break;
-            }
-            kwcache = kwcache->next;
-        }
-        kwcache->next = (cleri_kwcache_t *) malloc(sizeof(cleri_kwcache_t));
-        if (kwcache->next == NULL)
-        {
-            return -1;
-        }
-        kwcache = kwcache->next;
-        kwcache->len = 0;
-        kwcache->next = NULL;
     }
+    kwcache = (cleri_kwcache_t *) malloc(sizeof(cleri_kwcache_t));
+    if (!kwcache) return -1;
+
+    cleri_vec_t * tmp = cleri_vec_push(pr->kwcache_, kwcache);
+    if (!tmp)
+    {
+        free(kwcache);
+        return -1;
+    }
+    pr->kwcache_ = tmp;
 
     kwcache->str = str;
-    KWCACHE_kw_match(kwcache, pr, str);
+    kwcache->len = KWCACHE_kw_match(pr, str);
     return kwcache->len;
 }
 
-/*
- * Destroy kwcache. (parsing NULL is allowed)
- */
-void cleri__kwcache_free(cleri_kwcache_t * kwcache)
-{
-    cleri_kwcache_t * next;
-    while (kwcache != NULL)
-    {
-        next = kwcache->next;
-        free(kwcache);
-        kwcache = next;
-    }
-}
 
 /*
  * This function will set kwcache->len if a match is found.
  */
-static void KWCACHE_kw_match(
-        cleri_kwcache_t * kwcache,
-        cleri_parse_t * pr,
-        const char * str)
+static int KWCACHE_kw_match(cleri_parse_t * pr, const char * str)
 {
     int pcre_exec_ret;
     int sub_str_vec[2];
 
     pcre_exec_ret = pcre_exec(
-                pr->re_keywords,
-                pr->re_kw_extra,
+                pr->re_keywords_,
+                pr->re_kw_extra_,
                 str,
                 strlen(str),
                 0,                     // start looking at this point
@@ -110,8 +67,8 @@ static void KWCACHE_kw_match(
                 2);                    // length of sub_str_vec
     if (pcre_exec_ret != 1)
     {
-        return;
+        return 0;
     }
 
-    kwcache->len = sub_str_vec[1];
+    return sub_str_vec[1];
 }
